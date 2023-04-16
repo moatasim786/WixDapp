@@ -1,84 +1,181 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="utf-8">
-    <title>Wallet Connect Button</title>
-    <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js/dist/web3.min.js"></script>
-    <style>
-      #connectButton {
-        background-color: #4CAF50;
-        border: none;
-        color: white;
-        padding: 15px 32px;
-        text-align: center;
-        text-decoration: none;
-        display: inline-block;
-        font-size: 16px;
-        margin: 4px 2px;
-        cursor: pointer;
-        border-radius: 25px;
-        box-shadow: 5px 5px 5px #888888;
-        transition: transform 0.3s, box-shadow 0.3s;
-      }
-      #connectButton:hover {
-        transform: scale(1.1);
-        box-shadow: 10px 10px 10px #888888;
-      }
-      #connectButton.connect {
-        background-color: #4CAF50;
-      }
-      #connectButton.address {
-        background-color: #008CBA;
-      }
-      #connectButton.address:hover {
-        background-color: #00bcd4;
-      }
-      #walletInfo {
-        display: none;
-        background-color: #f2f2f2;
-        padding: 20px;
-        border-radius: 25px;
-        box-shadow: 5px 5px 5px #888888;
-        width: 400px;
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-      }
-      #walletInfo.show {
-        display: block;
-      }
-    </style>
-  </head>
-  <body>
-    <button id="connectButton" class="connect">Connect Wallet</button>
-    <div id="walletInfo">
-      <p id="address"></p>
-      <p id="balance"></p>
-    </div>
-    <script>
-      const infuraProjectId = "a0cee7ad138844a59605683f18af97c1";
-      const web3 = new Web3(`https://mainnet.infura.io/v3/a0cee7ad138844a59605683f18af97c1`);
-      
-      async function connectWallet() {
-        const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-        if (accounts.length > 0) {
-          const balance = await web3.eth.getBalance(accounts[0]);
-          const balanceEth = web3.utils.fromWei(balance, "ether");
-          document.getElementById("connectButton").innerHTML = accounts[0];
-          document.getElementById("connectButton").classList.remove("connect");
-          document.getElementById("connectButton").classList.add("address");
-          document.getElementById("walletInfo").classList.add("show");
-          document.getElementById("address").innerHTML = `Wallet Address: ${accounts[0]}`;
-          document.getElementById("balance").innerHTML = `Ether Balance: ${balanceEth} ETH`;
-        } else {
-          alert("User rejected the request to connect the wallet");
-        }
-      }
-      
-      document.getElementById("connectButton").addEventListener("click", () => {
-        connectWallet();
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Balance Checker Dapp</title>
+	<!-- CSS styles -->
+	<style>
+		body {
+			font-family: Arial, sans-serif;
+			background-color: #f1f1f1;
+			margin: 0;
+			padding: 0;
+		}
+		.container {
+			width: 80%;
+			max-width: 800px;
+			margin: 0 auto;
+			padding: 20px;
+			background-color: #fff;
+			border-radius: 5px;
+			box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+			position: relative;
+			top: 50px;
+			box-sizing: border-box;
+		}
+		h1 {
+			font-size: 32px;
+			margin-top: 0;
+			text-align: center;
+		}
+		.connect-wallet {
+			position: absolute;
+			top: 20px;
+			right: 20px;
+			padding: 10px 20px;
+			background-color: #4CAF50;
+			color: #fff;
+			border: none;
+			border-radius: 5px;
+			cursor: pointer;
+		}
+		.connect-wallet:hover {
+			background-color: #3e8e41;
+		}
+		.connect-wallet:disabled {
+			background-color: gray;
+			cursor: not-allowed;
+		}
+		.token-input {
+			display: flex;
+			align-items: center;
+			margin: 20px 0;
+		}
+		.token-input label {
+			font-size: 20px;
+			margin-right: 10px;
+		}
+		.token-input input[type="text"] {
+			padding: 10px;
+			font-size: 20px;
+			border-radius: 5px;
+			border: none;
+			flex: 1;
+			box-sizing: border-box;
+			margin-right: 10px;
+		}
+		.token-input button {
+			padding: 10px 20px;
+			background-color: #4CAF50;
+			color: #fff;
+			border: none;
+			border-radius: 5px;
+			cursor: pointer;
+			font-size: 20px;
+		}
+		.token-input button:hover {
+			background-color: #3e8e41;
+		}
+		.result {
+			margin-top: 20px;
+			text-align: center;
+			font-size: 24px;
+		}
+	</style>
+</head>
+<body>
+	<button class="connect-wallet" disabled>Connect Wallet</button>
+	<div class="container">
+		<h1>Balance Checker Dapp</h1>
+		<div class="token-input">
+			<label for="token-address">Enter ERC20 Token Address:</label>
+			<input type="text" id="token-address" placeholder="e.g. 0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984">
+			<button id="check-balance-btn" disabled>Check Balance</button>
+		</div>
+		<div class="result" id="result"></div>
+	</div>
+
+	<!-- JavaScript -->
+	<script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js/dist/web3.min.js
+  const infuraProjectId = "a0cee7ad138844a59605683f18af97c1";
+  const web3 = new Web3('https://mainnet.infura.io/v3/a0cee7ad138844a59605683f18af97c1');
+  
+  const contractABI = [
+    // Standard ERC20 ABI
+    {
+      "constant": true,
+      "inputs": [{ "name": "_owner", "type": "address" }],
+      "name": "balanceOf",
+      "outputs": [{ "name": "balance", "type": "uint256" }],
+      "type": "function"
+    }
+  ];
+  
+  let contractInstance;
+  
+  async function connectWallet() {
+    try {
+      // Prompt user to connect their wallet
+      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+      const address = accounts[0];
+      document.getElementById("walletAddress").textContent = address;
+  
+      // Initialize the contract instance with the user's selected address
+      contractInstance = new web3.eth.Contract(contractABI, document.getElementById("tokenAddress").value, {
+        from: address
       });
-    </script>
-  </body>
-</html>
+  
+      // Display the token balance if the user holds the token
+      const tokenBalance = await contractInstance.methods.balanceOf(address).call();
+      if (tokenBalance > 0) {
+        const tokenSymbol = document.getElementById("tokenSymbol").textContent;
+        const balanceEth = web3.utils.fromWei(tokenBalance, "ether");
+        document.getElementById("tokenBalance").textContent = `${balanceEth} ${tokenSymbol}`;
+      } else {
+        document.getElementById("tokenBalance").textContent = "NONE";
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to connect wallet");
+    }
+  }
+  
+  document.getElementById("connectWalletButton").addEventListener("click", () => {
+    connectWallet();
+  });
+  
+  document.getElementById("tokenForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+  
+    // Validate the ERC20 token address
+    const tokenAddress = document.getElementById("tokenAddress").value;
+    if (!web3.utils.isAddress(tokenAddress)) {
+      alert("Invalid ERC20 token address");
+      return;
+    }
+  
+    // Initialize the contract instance with the user's selected address
+    contractInstance = new web3.eth.Contract(contractABI, tokenAddress);
+  
+    try {
+      // Get the token symbol from the contract instance
+      const tokenSymbol = await contractInstance.methods.symbol().call();
+      document.getElementById("tokenSymbol").textContent = tokenSymbol;
+  
+      // Display the token balance if the user holds the token
+      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+      const address = accounts[0];
+      const tokenBalance = await contractInstance.methods.balanceOf(address).call();
+      if (tokenBalance > 0) {
+        const balanceEth = web3.utils.fromWei(tokenBalance, "ether");
+        document.getElementById("tokenBalance").textContent = `${balanceEth} ${tokenSymbol}`;
+      } else {
+        document.getElementById("tokenBalance").textContent = "NONE";
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to get ERC20 token balance");
+    }
+  });
+  
