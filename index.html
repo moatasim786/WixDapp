@@ -4,17 +4,76 @@
     <meta charset="utf-8">
     <title>Wallet Connect Button</title>
     <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js/dist/web3.min.js"></script>
+    <style>
+      #connectButton {
+        background-color: #4CAF50;
+        border: none;
+        color: white;
+        padding: 15px 32px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+        margin: 4px 2px;
+        cursor: pointer;
+        border-radius: 25px;
+        box-shadow: 5px 5px 5px #888888;
+        transition: transform 0.3s, box-shadow 0.3s;
+      }
+      #connectButton:hover {
+        transform: scale(1.1);
+        box-shadow: 10px 10px 10px #888888;
+      }
+      #connectButton.connect {
+        background-color: #4CAF50;
+      }
+      #connectButton.address {
+        background-color: #008CBA;
+      }
+      #connectButton.address:hover {
+        background-color: #00bcd4;
+      }
+      #walletInfo {
+        display: none;
+        background-color: #f2f2f2;
+        padding: 20px;
+        border-radius: 25px;
+        box-shadow: 5px 5px 5px #888888;
+        width: 400px;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+      }
+      #walletInfo.show {
+        display: block;
+      }
+    </style>
   </head>
   <body>
-    <button id="connectButton">Connect Wallet</button>
+    <button id="connectButton" class="connect">Connect Wallet</button>
+    <div id="walletInfo">
+      <p id="address"></p>
+      <p id="balance"></p>
+    </div>
     <script>
       const infuraProjectId = "a0cee7ad138844a59605683f18af97c1";
       const web3 = new Web3(`https://mainnet.infura.io/v3/a0cee7ad138844a59605683f18af97c1`);
       
       async function connectWallet() {
         const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-        const balance = await web3.eth.getBalance(accounts[0]);
-        alert(`Your ether balance is: ${web3.utils.fromWei(balance, "ether")} ETH`);
+        if (accounts.length > 0) {
+          const balance = await web3.eth.getBalance(accounts[0]);
+          const balanceEth = web3.utils.fromWei(balance, "ether");
+          document.getElementById("connectButton").innerHTML = accounts[0];
+          document.getElementById("connectButton").classList.remove("connect");
+          document.getElementById("connectButton").classList.add("address");
+          document.getElementById("walletInfo").classList.add("show");
+          document.getElementById("address").innerHTML = `Wallet Address: ${accounts[0]}`;
+          document.getElementById("balance").innerHTML = `Ether Balance: ${balanceEth} ETH`;
+        } else {
+          alert("User rejected the request to connect the wallet");
+        }
       }
       
       document.getElementById("connectButton").addEventListener("click", () => {
